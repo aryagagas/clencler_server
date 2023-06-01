@@ -3,15 +3,13 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\Mitra;
 use App\Models\User;
-use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Foundation\Auth\AuthenticatesUsers;
 
 class UserController extends Controller
 {
-    // use AuthenticatesUsers;
 
     public function register(Request $request)
     {
@@ -84,6 +82,33 @@ class UserController extends Controller
             return response()->json(['message' => 'Logout successfully']);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th]);
+        }
+    }
+    public function getProfile($userid)
+    {
+        try {
+            $profile = User::find($userid);
+            return response()->json($profile);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th]);
+        }
+    }
+    public function getAllMitras(Request $request)
+    {
+        try {
+            $posts = Mitra::all();
+            return response()->json(['body'=>$posts]);
+        } catch (\Throwable $th) {
+            return response()->json(['message'=>$th]);
+        }
+    }
+    public function getMitra($mitraid)
+    {
+        try {
+            $post = Mitra::findOrFail($mitraid);
+            return response()->json(['body'=>$post]);
+        } catch (\Throwable $th) {
+            return response()->json(['message'=>$th]);
         }
     }
 }

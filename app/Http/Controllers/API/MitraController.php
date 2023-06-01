@@ -44,7 +44,7 @@ class MitraController extends Controller
             $mitra->license_number = $request->license_number;
             $mitra->save();
 
-            return response()->json(['message' => 'User registered successfully']);
+            return response()->json(['message' => 'Mitra registered successfully']);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th]);
         }
@@ -83,7 +83,17 @@ class MitraController extends Controller
         try {
             Auth::guard('mitra')->logout();
             auth()->user()->tokens()->delete();
-            return response()->json(['message' => 'Logout successfully']);
+            return response()->json(['message' => 'Mitra logout successfully']);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th]);
+        }
+    }
+
+    public function getProfile($mitraid)
+    {
+        try {
+            $profile = Mitra::find($mitraid);
+            return response()->json($profile);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th]);
         }
