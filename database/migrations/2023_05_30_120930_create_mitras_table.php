@@ -15,19 +15,19 @@ return new class extends Migration
     {
         Schema::create('mitras', function (Blueprint $table) {
             $table->id();
-            $table->string('first_name');
-            $table->string('last_name');
+            $table->string('first_name')->nullable();
+            $table->string('last_name')->nullable();
             $table->string('email')->unique();
             $table->string('password');
-            $table->string('phone_number');
-            $table->string('address');
-            $table->string('country');
-            $table->string('city');
-            $table->string('postal_code');
-            $table->date('birthdate');
-            $table->enum('gender', ['male', 'female', 'other']);
-            $table->string('degree');
-            $table->string('license_number');
+            $table->string('phone_number')->nullable();
+            $table->string('address')->nullable();
+            $table->string('country')->nullable();
+            $table->string('city')->nullable();
+            $table->string('postal_code')->nullable();
+            $table->date('birthdate')->nullable();
+            $table->enum('gender', ['male', 'female', 'other'])->nullable();
+            $table->string('degree')->nullable();
+            $table->string('license_number')->nullable();
             $table->timestamps();
         });
     }

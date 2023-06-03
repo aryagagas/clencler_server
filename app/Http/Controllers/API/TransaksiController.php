@@ -8,24 +8,6 @@ use Illuminate\Http\Request;
 
 class TransaksiController extends Controller
 {
-    public function getUserTransaksi($userid)
-    {
-        try {
-            $transaksi = Transaksi::with('user','mitra')->where('user_id', $userid)->get();
-            return response()->json(['message' => $transaksi]);
-        } catch (\Throwable $th) {
-            return response()->json(['message' => $th]);
-        }
-    }
-    public function getMitraTransaksi($mitraid)
-    {
-        try {
-            $transaksi = Transaksi::with('user','mitra')->where('mitra_id', $mitraid)->get();
-            return response()->json(['message' => $transaksi]);
-        } catch (\Throwable $th) {
-            return response()->json(['message' => $th]);
-        }
-    }
     public function createTransaksi(Request $request)
     {
         try {
@@ -44,24 +26,82 @@ class TransaksiController extends Controller
             $transaksi->platform = $request->platform;
             $transaksi->total = $request->total;
             $transaksi->save();
-            return response()->json(['message' => 'Transaksi berhasil dibuat']);
+            return response()->json([
+                'status' => '200',
+                'message' => 'Transaksi created successfully',
+                'body' => $transaksi,
+            ], 200);
         } catch (\Throwable $th) {
-            return response()->json(['message' => $th]);
+            return response()->json([
+                'status' => '400',
+                'message' => $th,
+            ], 400);
         }
     }
-    public function updateTransaksi(Request $request, $transaksiid)
+    public function getUserTransaksi($user_id)
     {
         try {
-            $request->validate([
-                'status' => 'required',
-            ]);
-            Transaksi::where('id', $transaksiid)->update([
-                'status' => $request->status,
-            ]);
-            $transaksi = Transaksi::findOrFail($transaksiid);
-            return response()->json(['message' => 'Update successfully','body'=>$transaksi]);
+            $transaksi = Transaksi::with('user','mitra')->where('user_id', $user_id)->get();
+            return response()->json([
+                'status' => '200',
+                'message' => 'Get data successfully',
+                'body' => $transaksi,
+            ], 200);
         } catch (\Throwable $th) {
-            return response()->json(['message' => $th]);
+            return response()->json([
+                'status' => '400',
+                'message' => $th,
+            ], 400);
+        }
+    }
+    public function getMitraTransaksi($mitra_id)
+    {
+        try {
+            $transaksi = Transaksi::with('user','mitra')->where('mitra_id', $mitra_id)->get();
+            return response()->json([
+                'status' => '200',
+                'message' => 'Get data successfully',
+                'body' => $transaksi,
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => '400',
+                'message' => $th,
+            ], 400);
+        }
+    }
+    
+    public function getDetailTransaksi($transaksi_id)
+    {
+        try {
+            $transaksi = Transaksi::with('user','mitra')->findOrFail($transaksi_id);
+            return response()->json([
+                'status' => '200',
+                'message' => 'Get detail successfully',
+                'body' => $transaksi,
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => '400',
+                'message' => $th,
+            ], 400);
+        }
+    }
+
+    public function getAllTransaksi(Request $request)
+    {
+        try {
+            $transaksi = Transaksi::all();
+            return response()->json([
+                'status' => '200',
+                'message' => 'Get data successfully',
+                'body' => $transaksi,
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => '400',
+                'message' => $th,
+            ], 400);
         }
     }
 }

@@ -8,22 +8,36 @@ use Illuminate\Http\Request;
 
 class PostController extends Controller
 {
-    public function getAllPosts()
+    public function getAllPost()
     {
         try {
             $posts = Post::all();
-            return response()->json(['body'=>$posts]);
+            return response()->json([
+                'status' => '200',
+                'message' => 'Get all post successfully',
+                'body' => $posts,
+            ], 200);
         } catch (\Throwable $th) {
-            return response()->json(['message'=>$th]);
+            return response()->json([
+                'status' => '400',
+                'message' => $th,
+            ], 400);
         }
     }
-    public function getPost($postid)
+    public function getDetailPost($post_id)
     {
         try {
-            $post = Post::findOrFail($postid);
-            return response()->json(['body'=>$post]);
+            $post = Post::findOrFail($post_id);
+            return response()->json([
+                'status' => '200',
+                'message' => 'Get data successfully',
+                'body' => $post,
+            ], 200);
         } catch (\Throwable $th) {
-            return response()->json(['message'=>$th]);
+            return response()->json([
+                'status' => '400',
+                'message' => $th,
+            ], 400);
         }
     }
     public function createPost(Request $request)
@@ -39,9 +53,16 @@ class PostController extends Controller
             $post->title = $request->title;
             $post->content = $request->content;
             $post->save();
-            return response()->json(['message' => 'Post berhasil dibuat']);
+            return response()->json([
+                'status' => '200',
+                'message' => 'Post created successfully',
+                'body' => $post,
+            ], 200);
         } catch (\Throwable $th) {
-            return response()->json(['message'=>$th]);
+            return response()->json([
+                'status' => '400',
+                'message' => $th,
+            ], 400);
         }
     }
 }

@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Mitra;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class MitraController extends Controller
 {
@@ -14,66 +15,54 @@ class MitraController extends Controller
     {
         try {
             $request->validate([
-                'first_name' => 'required',
-                'last_name' => 'required',
                 'email' => 'required|email',
                 'password' => 'required',
-                'phone_number' => 'required',
-                'address' => 'required',
-                'country' => 'required',
-                'city' => 'required',
-                'postal_code' => 'required',
-                'birthdate' => 'required',
-                'gender' => 'required',
-                'degree' => 'required',
-                'license_number' => 'required',
             ]);
             $mitra = new Mitra;
-            $mitra->first_name = $request->first_name;
-            $mitra->last_name = $request->last_name;
             $mitra->email = $request->email;
             $mitra->password = bcrypt($request->password);
-            $mitra->phone_number = $request->phone_number;
-            $mitra->address = $request->address;
-            $mitra->country = $request->country;
-            $mitra->city = $request->city;
-            $mitra->postal_code = $request->postal_code;
-            $mitra->birthdate = $request->birthdate;
-            $mitra->gender = $request->gender;
-            $mitra->degree = $request->degree;
-            $mitra->license_number = $request->license_number;
             $mitra->save();
 
-            return response()->json(['message' => 'Mitra registered successfully']);
+            return response()->json([
+                'status' => '200',
+                'message' => 'Mitra registered successfully',
+                'body' => $mitra,
+            ], 200);
         } catch (\Throwable $th) {
-            return response()->json(['message' => $th]);
+            return response()->json([
+                'status' => '400',
+                'message' => $th,
+            ], 400);
         }
 
     }
     public function login(Request $request)
     {
         try {
-            $input = $request->all();
-            $validation = \Validator::make($input, [
+            $request->validate([
                 'email' => 'required|email',
                 'password' => 'required',
             ]);
-            $credentials = $request->validate([
-                'email' => 'required|email',
-                'password' => 'required',
-            ]);
-            if ($validation->fails()) {
-                return response()->json(['error' => $validation->errors()]);
-            }
-            if (Auth::guard('mitra')->attempt($credentials)) {
-                $user = Auth::guard('mitra')->user();
-                $token = $user->createToken($input['email'], ['mitra'])->plainTextToken;
-                return response()->json(['token' => $token]);
+            if (Mitra::where('email', $request->email)->first() && Hash::check($request->password, (Mitra::where('email', $request->email)->first())->getAuthPassword())) {
+                $mitra = Mitra::where('email', $request->email)->first();
+                $mitra->makeVisible('password');
+                return response()->json([
+                    'status' => '200',
+                    'message' => 'Login successfully',
+                    'body' => $mitra,
+                ], 200);
             } else {
-                return response()->json(['error' => 'error blok']);
+                return response()->json([
+                    'status' => '400',
+                    'message' => 'Invalid User Credential',
+                    'body' => null,
+                ], 400);
             }
         } catch (\Throwable $th) {
-            return response()->json(['message' => $th]);
+            return response()->json([
+                'status' => '400',
+                'message' => $th,
+            ], 400);
         }
 
 
@@ -81,21 +70,116 @@ class MitraController extends Controller
     public function logout(Request $request)
     {
         try {
-            Auth::guard('mitra')->logout();
-            auth()->user()->tokens()->delete();
-            return response()->json(['message' => 'Mitra logout successfully']);
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required',
+            ]);
+            if (Mitra::where('email', $request->email)->first() && Hash::check($request->password, (Mitra::where('email', $request->email)->first())->getAuthPassword())) {
+                return response()->json([
+                    'status' => '200',
+                    'message' => 'Logout successfully',
+                    'body' => null,
+                ], 200);
+            } else {
+                return response()->json([
+                    'status' => '400',
+                    'message' => 'Invalid User Credential',
+                ], 400);
+            }
         } catch (\Throwable $th) {
-            return response()->json(['message' => $th]);
+            return response()->json([
+                'status' => '400',
+                'message' => $th,
+            ], 400);
         }
     }
 
-    public function getProfile($mitraid)
+    public function getProfile($mitra_id)
     {
         try {
-            $profile = Mitra::find($mitraid);
-            return response()->json($profile);
+            $profile = Mitra::find($mitra_id);
+            return response()->json([
+                'status' => '200',
+                'message' => 'Get data successfully',
+                'body' => $profile,
+            ], 200);
         } catch (\Throwable $th) {
-            return response()->json(['message' => $th]);
+            return response()->json([
+                'status' => '400',
+                'message' => $th,
+            ], 400);
+        }
+    }
+    public function updateProfile(Request $request, $mitra_id)
+    {
+        try {
+            $profile = Mitra::find($mitra_id)->makeVisible('password');
+            if ($profile) {
+                $profile->first_name = $request->first_name ?: $profile->first_name;
+                $profile->last_name = $request->last_name ?: $profile->last_name;
+                $profile->password = $request->password ? bcrypt($request->password) : $profile->password;
+                $profile->phone_number = $request->phone_number ?: $profile->phone_number;
+                $profile->address = $request->address ?: $profile->address;
+                $profile->country = $request->country ?: $profile->country;
+                $profile->city = $request->city ?: $profile->city;
+                $profile->postal_code = $request->postal_code ?: $profile->postal_code;
+                $profile->birthdate = $request->birthdate ?: $profile->birthdate;
+                $profile->gender = $request->gender ?: $profile->gender;
+                $profile->degree = $request->degree ?: $profile->degree;
+                $profile->license_number = $request->license_number ?: $profile->license_number;
+                $profile->save();
+
+
+                return response()->json([
+                    'status' => '200',
+                    'message' => 'Update data successfully',
+                    'body' => $profile,
+                ], 200);
+            } else {
+                return response()->json([
+                    'status' => '400',
+                    'message' => 'Invalid Mitra Credential',
+                ], 400);
+            }
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => '400',
+                'message' => $th,
+            ], 400);
+        }
+    }
+
+    public function getAllMitra()
+    {
+        try {
+            $mitra = Mitra::all();
+            return response()->json([
+                'status' => '200',
+                'message' => 'Get data successfully',
+                'body' => $mitra,
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => '400',
+                'message' => $th,
+            ], 400);
+        }
+    }
+
+    public function getDetailMitra($mitra_id)
+    {
+        try {
+            $mitra = Mitra::findOrFail($mitra_id);
+            return response()->json([
+                'status' => '200',
+                'message' => 'Get detail successfully',
+                'body' => $mitra,
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => '400',
+                'message' => $th,
+            ], 400);
         }
     }
 }

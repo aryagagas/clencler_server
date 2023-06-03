@@ -7,6 +7,8 @@ use App\Models\Mitra;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use PHPUnit\Framework\Constraint\IsEmpty;
 
 class UserController extends Controller
 {
@@ -15,100 +17,157 @@ class UserController extends Controller
     {
         try {
             $request->validate([
-                'first_name' => 'required',
-                'last_name' => 'required',
                 'email' => 'required|email',
                 'password' => 'required',
-                'phone_number' => 'required',
-                'address' => 'required',
-                'country' => 'required',
-                'city' => 'required',
-                'postal_code' => 'required',
-                'birthdate' => 'required',
-                'gender' => 'required',
             ]);
             $user = new User;
-            $user->first_name = $request->first_name;
-            $user->last_name = $request->last_name;
             $user->email = $request->email;
             $user->password = bcrypt($request->password);
-            $user->phone_number = $request->phone_number;
-            $user->address = $request->address;
-            $user->country = $request->country;
-            $user->city = $request->city;
-            $user->postal_code = $request->postal_code;
-            $user->birthdate = $request->birthdate;
-            $user->gender = $request->gender;
             $user->save();
 
-            return response()->json(['message' => 'User registered successfully']);
+            return response()->json([
+                'status' => '200',
+                'message' => 'User registered successfully',
+                'body' => $user,
+            ], 200);
         } catch (\Throwable $th) {
-            return response()->json(['message' => $th]);
+            return response()->json([
+                'status' => '400',
+                'message' => $th,
+            ], 400);
         }
 
     }
     public function login(Request $request)
     {
         try {
-            $input = $request->all();
-            $validation = \Validator::make($input, [
+            $request->validate([
                 'email' => 'required|email',
                 'password' => 'required',
             ]);
-            $credentials = $request->validate([
-                'email' => 'required|email',
-                'password' => 'required',
-            ]);
-            if ($validation->fails()) {
-                return response()->json(['error' => $validation->errors()]);
-            }
-            if (Auth::attempt($credentials)) {
-                $user = Auth::user();
-                $token = $user->createToken($input['email'], ['userr'])->plainTextToken;
-                return response()->json(['token' => $token]);
+            if (User::where('email', $request->email)->first() && Hash::check($request->password, (User::where('email', $request->email)->first())->getAuthPassword())) {
+                $user = User::where('email', $request->email)->first();
+                $user->makeVisible('password');
+                return response()->json([
+                    'status' => '200',
+                    'message' => 'Login successfully',
+                    'body' => $user,
+                ], 200);
             } else {
-                return response()->json(['error' => 'error blok']);
+                return response()->json([
+                    'status' => '400',
+                    'message' => 'Invalid User Credential',
+                    'body' => null,
+                ], 400);
             }
         } catch (\Throwable $th) {
-            return response()->json(['message' => $th]);
+            return response()->json([
+                'status' => '400',
+                'message' => $th,
+            ], 400);
         }
 
     }
     public function logout(Request $request)
     {
         try {
-            Auth::guard('userr')->logout();
-            auth()->user()->tokens()->delete();
-            return response()->json(['message' => 'Logout successfully']);
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required',
+            ]);
+            if (User::where('email', $request->email)->first() && Hash::check($request->password, (User::where('email', $request->email)->first())->getAuthPassword())) {
+                return response()->json([
+                    'status' => '200',
+                    'message' => 'Logout successfully',
+                    'body' => null,
+                ], 200);
+            } else {
+                return response()->json([
+                    'status' => '400',
+                    'message' => 'Invalid User Credential',
+                ], 400);
+            }
         } catch (\Throwable $th) {
-            return response()->json(['message' => $th]);
+            return response()->json([
+                'status' => '400',
+                'message' => $th,
+            ], 400);
         }
     }
-    public function getProfile($userid)
+    public function getProfile($user_id)
     {
         try {
-            $profile = User::find($userid);
-            return response()->json($profile);
+            $profile = User::find($user_id);
+            return response()->json([
+                'status' => '200',
+                'message' => 'Get data successfully',
+                'body' => $profile,
+            ], 200);
         } catch (\Throwable $th) {
-            return response()->json(['message' => $th]);
+            return response()->json([
+                'status' => '400',
+                'message' => $th,
+            ], 400);
         }
     }
-    public function getAllMitras(Request $request)
+    public function updateProfile(Request $request, $user_id)
     {
         try {
-            $posts = Mitra::all();
-            return response()->json(['body'=>$posts]);
+            $profile = User::find($user_id)->makeVisible('password');
+            if ($profile) {
+                $profile->first_name = $request->first_name ?: $profile->first_name;
+                $profile->last_name = $request->last_name ?: $profile->last_name;
+                $profile->password = $request->password ? bcrypt($request->password) : $profile->password;
+                $profile->phone_number = $request->phone_number ?: $profile->phone_number;
+                $profile->address = $request->address ?: $profile->address;
+                $profile->country = $request->country ?: $profile->country;
+                $profile->city = $request->city ?: $profile->city;
+                $profile->postal_code = $request->postal_code ?: $profile->postal_code;
+                $profile->birthdate = $request->birthdate ?: $profile->birthdate;
+                $profile->gender = $request->gender ?: $profile->gender;
+                $profile->save();
+
+                return response()->json([
+                    'status' => '200',
+                    'message' => 'Update data successfully',
+                    'body' => $profile,
+                ], 200);
+            } else {
+                return response()->json([
+                    'status' => '400',
+                    'message' => 'Invalid User Credential',
+                ], 400);
+            }
         } catch (\Throwable $th) {
-            return response()->json(['message'=>$th]);
+            return response()->json([
+                'status' => '400',
+                'message' => $th,
+            ], 400);
         }
     }
-    public function getMitra($mitraid)
+    public function getAllUser()
     {
         try {
-            $post = Mitra::findOrFail($mitraid);
-            return response()->json(['body'=>$post]);
+            $users = User::all();
+            return response()->json([
+                'status' => '200',
+                'message' => 'Get all user successfully',
+                'body' => $users,
+            ], 200);
         } catch (\Throwable $th) {
-            return response()->json(['message'=>$th]);
+            return response()->json([
+                'status' => '400',
+                'message' => $th,
+            ], 400);
         }
     }
+    // public function getMitra($mitraid)
+    // {
+    //     try {
+    //         $post = Mitra::findOrFail($mitraid);
+    //         return response()->json(['body' => $post]);
+    //     } catch (\Throwable $th) {
+    //         return response()->json(['message' => $th]);
+    //     }
+    // }
 }
