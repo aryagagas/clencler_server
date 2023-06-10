@@ -15,12 +15,20 @@ class MitraController extends Controller
     {
         try {
             $request->validate([
+                'full_name' => 'required',
                 'email' => 'required|email',
                 'password' => 'required',
+                'phone_number' => 'required',
+                'address' => 'required',
+                'location' => 'required',
             ]);
             $mitra = new Mitra;
+            $mitra->full_name = $request->full_name;
             $mitra->email = $request->email;
             $mitra->password = bcrypt($request->password);
+            $mitra->phone_number = $request->phone_number;
+            $mitra->address = $request->address;
+            $mitra->location = $request->location;
             $mitra->save();
 
             return response()->json([
